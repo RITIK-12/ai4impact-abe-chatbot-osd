@@ -10,9 +10,9 @@ import {
   import useOnFollow from "../../common/hooks/use-on-follow";
   import BaseAppLayout from "../../components/base-app-layout";
   import CurrentEvalTab from "./current-eval-tab";
-  import NewEvalTab from "./new-eval-tab.tsx";
-  import PastEvalsTab from "./past-evals-tab.tsx";
-  import TestCasesTab from "./test-cases-tab.tsx";
+  import NewEvalTab from "./new-eval-tab";
+  import PastEvalsTab from "./past-evals-tab";
+  import TestCasesTab from "./test-cases-tab";
   import { CHATBOT_NAME } from "../../common/constants";
   import { useState, useEffect, useContext } from "react";
   import { Auth } from "aws-amplify";
@@ -40,23 +40,22 @@ import {
 
     // Check for activeTabId in URL and set the active tab accordingly
     useEffect(() => {
-      const hash = window.location.hash;
-      const match = hash.match(/activeTabId=([^&]*)/);
-      if (match && match[1]) {
-        const tabId = match[1];
-        console.log("Setting active tab from URL:", tabId);
-        setActiveTab(tabId);
-      }
+      const checkHashForActiveTab = () => {
+        const hash = window.location.hash;
+        const match = hash.match(/activeTabId=([^&]*)/);
+        if (match && match[1]) {
+          const tabId = match[1];
+          console.log("Setting active tab from URL:", tabId);
+          setActiveTab(tabId);
+        }
+      };
+      
+      // Check hash on initial load
+      checkHashForActiveTab();
       
       // Add a hash change listener to update the active tab when the URL changes
       const handleHashChange = () => {
-        const newHash = window.location.hash;
-        const newMatch = newHash.match(/activeTabId=([^&]*)/);
-        if (newMatch && newMatch[1]) {
-          const newTabId = newMatch[1];
-          console.log("Hash changed, setting active tab:", newTabId);
-          setActiveTab(newTabId);
-        }
+        checkHashForActiveTab();
       };
       
       window.addEventListener('hashchange', handleHashChange);
@@ -182,10 +181,9 @@ import {
                 }
               >
                 <SpaceBetween size="xxs">
-                Look at evaluation trends, performance on individual test cases, or create new evaluation instances with dynamic sets of test cases.
-
-                <br></br>
-
+                  <p>
+                    Look at evaluation trends, performance on individual test cases, or create new evaluation instances with dynamic sets of test cases.
+                  </p>
                 </SpaceBetween>
               </Container>
               <Tabs

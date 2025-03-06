@@ -8,6 +8,7 @@ import {
     Pagination,
     SpaceBetween,
     Table,
+    Alert
   } from "@cloudscape-design/components";
   import { useCallback, useContext, useEffect, useState } from "react";
   import { AppContext } from "../../common/app-context";
@@ -236,7 +237,7 @@ import {
       }
       
       // Validate file extension (should be .json)
-      if (!selectedFile.Key.toLowerCase().endsWith('.json')) {
+      if (!selectedFile.Key || !selectedFile.Key.toLowerCase().endsWith('.json')) {
         setGlobalError("Please select a valid JSON test case file");
         return;
       }
@@ -250,6 +251,10 @@ import {
         
         // Show success notification
         addNotification("success", "Evaluation started successfully. It may take a few minutes to complete.");
+        
+        if (result && result.error) {
+          throw new Error(result.error);
+        }
         
         // Redirect to the current evaluations tab
         props.tabChangeFunction();
@@ -283,6 +288,7 @@ import {
         setLoading(true);
         try {
             const result = await apiClient.evaluations.getDocuments(params?.continuationToken, params?.pageIndex)
+            
             // await props.statusRefreshFunction();
             setPages((current) => {
             if (typeof params.pageIndex !== "undefined") {
@@ -369,77 +375,87 @@ import {
     const columnDefinitions = getColumnDefinition(props.documentType, onProblemClick);
 
     return (
-      <>
-        <Form errorText={globalError}>
-          <SpaceBetween size="l">
-            <Container>
-              <SpaceBetween direction="horizontal" size="s">
-                <label style={{ alignSelf: 'center' }}>Evaluation Name:</label>
-                <Input
-                  value={evalName}
-                  placeholder="SampleEvalName"
-                  onChange={(event) => setEvalName(event.detail.value)}
-                />
-                <Button
-                  data-testid="new-evaluation"
-                  variant="primary"
-                  onClick={onNewEvaluation}
-                  disabled={!selectedFile}
-                >
-                  Create New Evaluation
-                </Button>
-                <Button
-                  iconName="refresh"
-                  onClick={refreshPage}
-                  ariaLabel="Refresh test case files"
-                >
-                  Refresh Files
-                </Button>
-              </SpaceBetween>
-            </Container>
-
-            {/* Adding space between the container and table */}
-            <Box padding={{ top: "xxs" }} />
-
-            {/* Table Section */}
-            <Table
-              {...collectionProps}
-              loading={loading}
-              loadingText={`Loading files`}
-              columnDefinitions={columnDefinitions}
-              selectionType="single"
-              onSelectionChange={({ detail }) => {
-                const clickedFile = detail.selectedItems[0];
-                setSelectedFile((prev) => (clickedFile && prev && clickedFile.Key === prev.Key ? null : clickedFile));
-              }}
-              selectedItems={selectedFile ? [selectedFile] : []}
-              items={pages[Math.min(pages.length - 1, currentPageIndex - 1)]?.Contents!}
-              trackBy="Key"
-              header={
-                <Header
-                  actions={
-                    <Button iconName="refresh" onClick={refreshPage} />
-                  }
-                  description="Please select a test case file for your next evaluation. Press the refresh button to see the latest test case files."
-                >
-                  {"Files"}
-                </Header>
-              }
-              empty={<Box textAlign="center">No test case files uploaded. Please upload a test case file before running an evaluation.</Box>}
-              pagination={
-                pages.length > 0 && (
-                  <Pagination
-                    openEnd={true}
-                    pagesCount={pages.length}
-                    currentPageIndex={currentPageIndex}
-                    onNextPageClick={onNextPageClick}
-                    onPreviousPageClick={onPreviousPageClick}
-                  />
-                )
-              }
-            />
+      <Form
+        actions={
+          <SpaceBetween direction="horizontal" size="xs">
+            <Button formAction="none" variant="link">
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={onNewEvaluation} loading={loading}>
+              Start Evaluation
+            </Button>
           </SpaceBetween>
-        </Form>
-      </>
+        }
+        errorText={globalError}
+      >
+        <SpaceBetween size="l">
+          <Container>
+            <SpaceBetween direction="horizontal" size="s">
+              <label style={{ alignSelf: 'center' }}>Evaluation Name:</label>
+              <Input
+                value={evalName}
+                placeholder="SampleEvalName"
+                onChange={(event) => setEvalName(event.detail.value)}
+              />
+              <Button
+                data-testid="new-evaluation"
+                variant="primary"
+                onClick={onNewEvaluation}
+                disabled={!selectedFile}
+              >
+                Create New Evaluation
+              </Button>
+              <Button
+                iconName="refresh"
+                onClick={refreshPage}
+                ariaLabel="Refresh test case files"
+              >
+                Refresh Files
+              </Button>
+            </SpaceBetween>
+          </Container>
+
+          {/* Adding space between the container and table */}
+          <Box padding={{ top: "xxs" }} />
+
+          {/* Table Section */}
+          <Table
+            {...collectionProps}
+            loading={loading}
+            loadingText={`Loading files`}
+            columnDefinitions={columnDefinitions}
+            selectionType="single"
+            onSelectionChange={({ detail }) => {
+              const clickedFile = detail.selectedItems[0];
+              setSelectedFile((prev) => (clickedFile && prev && clickedFile.Key === prev.Key ? null : clickedFile));
+            }}
+            selectedItems={selectedFile ? [selectedFile] : []}
+            items={pages[Math.min(pages.length - 1, currentPageIndex - 1)]?.Contents!}
+            trackBy="Key"
+            header={
+              <Header
+                actions={
+                  <Button iconName="refresh" onClick={refreshPage} />
+                }
+                description="Please select a test case file for your next evaluation. Press the refresh button to see the latest test case files."
+              >
+                {"Files"}
+              </Header>
+            }
+            empty={<Box textAlign="center">No test case files uploaded. Please upload a test case file before running an evaluation.</Box>}
+            pagination={
+              pages.length > 0 && (
+                <Pagination
+                  openEnd={true}
+                  pagesCount={pages.length}
+                  currentPageIndex={currentPageIndex}
+                  onNextPageClick={onNextPageClick}
+                  onPreviousPageClick={onPreviousPageClick}
+                />
+              )
+            }
+          />
+        </SpaceBetween>
+      </Form>
     );
   }

@@ -87,8 +87,23 @@ import {
         if (result && result.Items) {
           // Take only the first 10 evaluations
           const firstTenEvaluations = result.Items.slice(0, 10);
-          // Update state with just these evaluations
-          setEvaluations(firstTenEvaluations);
+          
+          // If there are evaluations, ensure they're properly formatted
+          if (firstTenEvaluations.length > 0) {
+            // Add any missing required fields with default values
+            const processedEvaluations = firstTenEvaluations.map(evaluation => ({
+              ...evaluation,
+              average_correctness: evaluation.average_correctness || 0,
+              average_relevance: evaluation.average_relevance || 0,
+              average_similarity: evaluation.average_similarity || 0,
+              Timestamp: evaluation.Timestamp || new Date().toISOString()
+            }));
+            
+            // Update state with processed evaluations
+            setEvaluations(processedEvaluations);
+          } else {
+            setEvaluations([]);
+          }
           
           // Clear any previous errors
           setError(null);
