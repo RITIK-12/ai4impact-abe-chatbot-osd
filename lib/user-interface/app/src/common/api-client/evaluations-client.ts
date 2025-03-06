@@ -269,23 +269,71 @@ export class EvaluationsClient {
 
   // Returns a list of documents in the S3 bucket (hard-coded on the backend)
   async getDocuments(continuationToken?: string, pageIndex?: number) {
-    const auth = await Utils.authenticate();
-    const response = await fetch(this.API + '/s3-test-cases-bucket-data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization' : auth
-      },
-      body: JSON.stringify({
-        continuationToken: continuationToken,
-        pageIndex: pageIndex,
-      }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to get files');
+    try {
+      const auth = await Utils.authenticate();
+      
+      console.log(`Fetching from ${this.API}/s3-test-cases-bucket-data`);
+      
+      try {
+        const response = await fetch(this.API + '/s3-test-cases-bucket-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': auth,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            continuationToken: continuationToken,
+            pageIndex: pageIndex,
+          }),
+          mode: "cors", // Explicitly set CORS mode
+          credentials: "include" // Include credentials if needed
+        });
+        
+        if (response.status === 404) {
+          console.error("API endpoint not found: /s3-test-cases-bucket-data");
+          return { Contents: [], NextContinuationToken: null, error: "API endpoint not found" };
+        }
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to get files: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+        
+        // Get the response text first to log it in case of parsing errors
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+        
+        try {
+          // Then parse it as JSON
+          const result = JSON.parse(responseText);
+          
+          // Check if result has Contents property, if not create an empty structure
+          if (!result.Contents) {
+            console.warn("Response missing Contents property, creating empty structure");
+            return { Contents: [], NextContinuationToken: null };
+          }
+          
+          return result;
+        } catch (parseError) {
+          console.error("Error parsing JSON response:", parseError);
+          console.error("Raw response was:", responseText);
+          throw new Error(`Invalid JSON response from server: ${parseError.message}`);
+        }
+      } catch (fetchError) {
+        // Handle CORS errors specifically
+        if (fetchError.message.includes("CORS") || 
+            fetchError.message.includes("cross-origin") || 
+            fetchError.message.includes("Cross-Origin")) {
+          console.error("CORS error:", fetchError);
+          throw new Error("Cross-Origin Request Blocked: The API doesn't allow requests from this origin. Please check CORS configuration on the API Gateway.");
+        }
+        throw fetchError;
+      }
+    } catch (error) {
+      console.error("Error in getDocuments:", error);
+      // Rethrow the error for consistent error handling across methods
+      throw error;
     }
-    console.log('response in the api', response);
-    const result = await response.json();
-    return result;
   }
 }

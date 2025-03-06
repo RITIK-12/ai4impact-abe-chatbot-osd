@@ -21,13 +21,6 @@ const findFirstSortableColumn = (columns) => {
   return columns.find(col => col.sortingField && !col.disableSort) || columns[0];
 };
 
-const onProblemClick = (EvaluationItem): void => {
-  console.log(" evaluation item: ", EvaluationItem);
-  const navigate = useNavigate();
-  navigate(`/admin/llm-evaluation/${EvaluationItem.evaluationId}`);
-};
-
-
 export interface PastEvalsTabProps {
   tabChangeFunction: () => void;
   documentType: AdminDataType;
@@ -43,6 +36,12 @@ export default function PastEvalsTab(props: PastEvalsTabProps) {
   const [pages, setPages] = useState([]);
   const needsRefresh = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const onProblemClick = (EvaluationItem): void => {
+    console.log(" evaluation item: ", EvaluationItem);
+    navigate(`/admin/llm-evaluation/${EvaluationItem.evaluationId}`);
+  };
 
   const columnDefinitions = getColumnDefinition(props.documentType, onProblemClick);
   const defaultSortingColumn = findFirstSortableColumn(columnDefinitions);

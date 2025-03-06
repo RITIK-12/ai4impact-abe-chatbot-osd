@@ -247,7 +247,7 @@ import {
             </Alert>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button 
-                onClick={() => window.location.href = '#/admin/llm-evaluation?activeTabId=add-test-cases'} 
+                onClick={() => window.location.hash = "?activeTabId=add-test-cases"} 
                 style={{
                   padding: '10px 20px',
                   backgroundColor: '#0972d3',
@@ -263,7 +263,7 @@ import {
                 Upload Test Cases
               </button>
               <button 
-                onClick={() => window.location.href = '#/admin/llm-evaluation?activeTabId=new-eval'} 
+                onClick={() => window.location.hash = "?activeTabId=new-eval"} 
                 style={{
                   padding: '10px 20px',
                   backgroundColor: '#0972d3',

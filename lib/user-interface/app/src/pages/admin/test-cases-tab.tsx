@@ -134,6 +134,14 @@ import {
         setUploadingStatus("success");
         setFilesToUpload([]);
         setFiles([]);
+        
+        // Add a slight delay before redirecting to ensure the success message is seen
+        setTimeout(() => {
+          // Call the tabChangeFunction to update the parent component
+          props.tabChangeFunction();
+          // Redirect to the new-eval tab with the correct URL
+          window.location.hash = "?activeTabId=new-eval";
+        }, 1500);
       }
     };
 
@@ -173,28 +181,12 @@ import {
             <SpaceBetween size="xxs">
             <p>Please ensure that your test case files follow one of the formats below:</p>
             
-            <h4>JSON Format (Recommended)</h4>
+            <h4>File Formats</h4>
             <ul>
-                <li>File must be in JSON format with a .json extension.</li>
-                <li>File must contain an array of test case objects.</li>
-                <li>Each test case object must have <strong>question</strong> and <strong>expectedResponse</strong> fields.</li>
+                <li>Files must be in either CSV or JSON format with the appropriate extension.</li>
+                <li>Each file must contain test cases with <strong>question</strong> and <strong>expectedResponse</strong> fields.</li>
                 <li>File size should not exceed 100MB.</li>
             </ul>
-            
-            <div style={{ backgroundColor: "#f2f3f3", padding: "10px", borderRadius: "4px", fontFamily: "monospace" }}>
-              <pre style={{ margin: 0 }}>
-{`[
-  {
-    "question": "What services does the Burnes Center offer?",
-    "expectedResponse": "The Burnes Center offers various services including..."
-  },
-  {
-    "question": "How do I schedule an appointment?",
-    "expectedResponse": "You can schedule an appointment by..."
-  }
-]`}
-              </pre>
-            </div>
             
             <h4>CSV Format</h4>
             <ul>
@@ -248,28 +240,24 @@ import {
                           ? null
                           : currentFileName
                       }
-                      label={
-                        uploadingStatus === "success" ||
-                        uploadingStatus === "error"
-                          ? "Uploading files"
-                          : `Uploading files ${uploadingIndex} of ${filesToUpload.length}`
-                      }
                       status={getProgressbarStatus()}
-                      resultText={
-                        uploadingStatus === "success"
-                          ? "Upload complete"
-                          : "Upload failed"
+                      additionalInfo={
+                        uploadingStatus === "in-progress"
+                          ? `Uploading ${uploadingIndex} of ${filesToUpload.length}`
+                          : undefined
                       }
                     />
                   ),
-                  type: uploadingStatus,
-                  dismissible:
-                    uploadingStatus === "success" || uploadingStatus === "error",
+                  statusIconAriaLabel:
+                    uploadingStatus === "success"
+                      ? "success"
+                      : uploadingStatus === "error"
+                      ? "error"
+                      : "in progress",
+                  dismissible: uploadingStatus !== "in-progress",
+                  dismissLabel: "Dismiss message",
                   onDismiss: () => setUploadPanelDismissed(true),
-                  buttonText:
-                    uploadingStatus === "success" ? "View files" : undefined,
-                  onButtonClick: () =>
-                    props.tabChangeFunction()
+                  id: "upload_progress",
                 },
               ]}
             />

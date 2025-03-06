@@ -38,6 +38,35 @@ import {
       }
     }
 
+    // Check for activeTabId in URL and set the active tab accordingly
+    useEffect(() => {
+      const hash = window.location.hash;
+      const match = hash.match(/activeTabId=([^&]*)/);
+      if (match && match[1]) {
+        const tabId = match[1];
+        console.log("Setting active tab from URL:", tabId);
+        setActiveTab(tabId);
+      }
+      
+      // Add a hash change listener to update the active tab when the URL changes
+      const handleHashChange = () => {
+        const newHash = window.location.hash;
+        const newMatch = newHash.match(/activeTabId=([^&]*)/);
+        if (newMatch && newMatch[1]) {
+          const newTabId = newMatch[1];
+          console.log("Hash changed, setting active tab:", newTabId);
+          setActiveTab(newTabId);
+        }
+      };
+      
+      window.addEventListener('hashchange', handleHashChange);
+      
+      // Clean up the listener when the component unmounts
+      return () => {
+        window.removeEventListener('hashchange', handleHashChange);
+      };
+    }, []);
+
   // fix broken aria menu
   useEffect(() => {
     const fixAriaMenus = () => {
@@ -198,7 +227,7 @@ import {
                           documentType="file"
                           />
                       ),
-                      },
+                    }
                 ]}
                 activeTabId={activeTab}
                 onChange={({ detail: { activeTabId } }) => {

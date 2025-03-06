@@ -24,16 +24,16 @@ import {
     documentType: AdminDataType;
   }
 
-  const onProblemClick = (NewEvaluationItem): void => {
-    console.log("New Evaluation item: ", NewEvaluationItem);
-    const navigate = useNavigate();
-    navigate(`/admin/llm-evaluation/${NewEvaluationItem.evaluationId}`);
-  }
-
   export default function NewEvalTab(props: FileUploadTabProps) {
     const appContext = useContext(AppContext);
     const apiClient = new ApiClient(appContext);
     const { addNotification } = useNotifications();
+    const navigate = useNavigate();
+
+    const onProblemClick = (NewEvaluationItem): void => {
+      console.log("New Evaluation item: ", NewEvaluationItem);
+      navigate(`/admin/llm-evaluation/${NewEvaluationItem.evaluationId}`);
+    }
 
     const [evalName, setEvalName] = useState<string>("SampleEvalName");
     const [globalError, setGlobalError] = useState<string | undefined>(undefined);
@@ -251,8 +251,9 @@ import {
         // Show success notification
         addNotification("success", "Evaluation started successfully. It may take a few minutes to complete.");
         
-        // Optionally navigate to the current evaluations tab
+        // Redirect to the current evaluations tab
         props.tabChangeFunction();
+        window.location.hash = "?activeTabId=current-eval";
       } catch (error) {
         console.error("Error starting evaluation:", error);
         const errorMessage = Utils.getErrorMessage(error);
@@ -264,6 +265,9 @@ import {
         } else if (errorMessage.includes("Unauthorized") || errorMessage.includes("403")) {
           setGlobalError("Authorization error: You don't have permission to start evaluations");
           addNotification("error", "Authorization error: You don't have permission to start evaluations");
+        } else if (errorMessage.includes("CORS") || errorMessage.includes("Cross-Origin")) {
+          setGlobalError("CORS error: The API doesn't allow requests from this origin. Please check CORS configuration on the API Gateway.");
+          addNotification("error", "CORS error: Please check API Gateway CORS configuration");
         } else {
           setGlobalError(`Error starting evaluation: ${errorMessage}`);
           addNotification("error", `Error starting evaluation: ${errorMessage}`);
@@ -289,7 +293,26 @@ import {
             }
             });
         } catch (error) {
-            console.error(Utils.getErrorMessage(error));
+            console.error("Error loading test cases:", error);
+            const errorMessage = Utils.getErrorMessage(error);
+            
+            // Show appropriate error message
+            if (errorMessage.includes("NetworkError") || errorMessage.includes("Failed to fetch")) {
+                setGlobalError("Network error: Unable to connect to the test cases service");
+                addNotification("error", "Network error: Unable to connect to the test cases service");
+            } else if (errorMessage.includes("Unauthorized") || errorMessage.includes("403")) {
+                setGlobalError("Authorization error: You don't have permission to access test cases");
+                addNotification("error", "Authorization error: You don't have permission to access test cases");
+            } else if (errorMessage.includes("CORS") || errorMessage.includes("Cross-Origin")) {
+                setGlobalError("CORS error: The API doesn't allow requests from this origin. Please check CORS configuration on the API Gateway.");
+                addNotification("error", "CORS error: Please check API Gateway CORS configuration");
+            } else if (errorMessage.includes("API endpoint not found")) {
+                setGlobalError("Test cases service not available. Please check that the backend is properly deployed.");
+                addNotification("error", "Test cases service not available");
+            } else {
+                setGlobalError(`Error loading test cases: ${errorMessage}`);
+                addNotification("error", `Error loading test cases: ${errorMessage}`);
+            }
         }
 
         console.log(pages);
@@ -302,6 +325,16 @@ import {
     useEffect(() => {
         getDocuments({});
     }, [getDocuments]);
+
+    // Add a useEffect to refresh the document list when the component mounts or when activeTabId changes
+    useEffect(() => {
+      // Check if the URL contains activeTabId=new-eval
+      const isActive = window.location.hash.includes('activeTabId=new-eval');
+      if (isActive) {
+        console.log("New Eval tab is active, refreshing document list");
+        refreshPage();
+      }
+    }, []);
 
     /** Handle clicks on the next page button, as well as retrievals of new pages if needed*/
     const onNextPageClick = async () => {
@@ -354,6 +387,13 @@ import {
                   disabled={!selectedFile}
                 >
                   Create New Evaluation
+                </Button>
+                <Button
+                  iconName="refresh"
+                  onClick={refreshPage}
+                  ariaLabel="Refresh test case files"
+                >
+                  Refresh Files
                 </Button>
               </SpaceBetween>
             </Container>
