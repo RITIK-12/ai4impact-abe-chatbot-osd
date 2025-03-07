@@ -285,6 +285,11 @@ export class ChatBotApi extends Construct {
       methods: [apigwv2.HttpMethod.POST],
       integration: s3UploadTestCasesAPIIntegration,
       authorizer: httpAuthorizer,
+      corsPreflight: {
+        allowOrigins: ['https://dcf43zj2k8alr.cloudfront.net'],
+        allowMethods: [apigwv2.CorsHttpMethod.POST],
+        allowHeaders: ['Content-Type', 'Authorization']
+      }
     })
   }
 }
